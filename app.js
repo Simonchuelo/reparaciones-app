@@ -532,22 +532,12 @@ class ReparacionesApp {
     }
 
     async saveRepair() {
-        const formData = {
-            fecha: document.getElementById('editFecha').value,
-            orden: document.getElementById('editOrden').value,
-            telefono: document.getElementById('editTelefono').value,
-            consola: document.getElementById('editConsola').value,
-            serie: document.getElementById('editSerie').value,
-            falla: document.getElementById('editFalla').value,
-            observaciones: document.getElementById('editObservaciones').value,
-            tecnico: document.getElementById('editTecnico').value,
-            reparacion: document.getElementById('editReparacion').value,
-            costoTecnico: document.getElementById('editCostoTecnico').value,
-            confirma: document.getElementById('editConfirma').value,
-            precio: document.getElementById('editPrecio').value,
-            entrega: document.getElementById('editEntrega').value,
-            fechaRetiro: document.getElementById('editFechaRetiro').value
-        };
+        const formData = this.getFormData();
+
+        if (!formData.orden || !formData.fecha) {
+            this.showMessage('Completá al menos la fecha y el número de orden', 'error');
+            return;
+        }
 
         if (!CONFIG.SCRIPT_URL) {
             this.showMessage('⚠️ Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
@@ -574,79 +564,163 @@ class ReparacionesApp {
         }
     }
 
+    // ============ SAVE AND PRINT ============
+
+    async saveAndPrint() {
+        // Get form data before saving
+        const formData = this.getFormData();
+        
+        if (!formData.orden || !formData.fecha) {
+            this.showMessage('Completá al menos la fecha y el número de orden', 'error');
+            return;
+        }
+
+        // Try to save first
+        if (CONFIG.SCRIPT_URL) {
+            try {
+                const response = await fetch(CONFIG.SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(formData),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                await response.json();
+            } catch (e) {
+                // Continue to print even if save fails
+            }
+        }
+
+        // Print the receipt
+        this.printReceiptFromData(formData);
+        this.closeModal();
+        this.showMessage('✅ Comprobante abierto para imprimir', 'success');
+        await this.loadData();
+    }
+
+    getFormData() {
+        return {
+            fecha: document.getElementById('editFecha').value,
+            orden: document.getElementById('editOrden').value,
+            telefono: document.getElementById('editTelefono').value,
+            consola: document.getElementById('editConsola').value,
+            serie: document.getElementById('editSerie').value,
+            falla: document.getElementById('editFalla').value,
+            observaciones: document.getElementById('editObservaciones').value,
+            tecnico: document.getElementById('editTecnico').value,
+            reparacion: document.getElementById('editReparacion').value,
+            costoTecnico: document.getElementById('editCostoTecnico').value,
+            confirma: document.getElementById('editConfirma').value,
+            precio: document.getElementById('editPrecio').value,
+            entrega: document.getElementById('editEntrega').value,
+            fechaRetiro: document.getElementById('editFechaRetiro').value
+        };
+    }
+
     // ============ PRINT RECEIPT ============
 
     printReceipt(orden) {
         const repair = this.data.find(r => r.orden === orden);
         if (!repair) return;
+        this.printReceiptFromData(repair);
+    }
 
+    printReceiptFromData(repair) {
         const printWindow = window.open('', '_blank');
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Comprobante - Orden ${orden}</title>
+                <title>Comprobante Orden ${repair.orden}</title>
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
-                    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-                    .header h1 { font-size: 18px; }
-                    .header p { font-size: 12px; }
-                    .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
-                    .field { display: flex; margin-bottom: 6px; font-size: 12px; }
-                    .field .label { font-weight: bold; width: 140px; }
-                    .field .value { flex: 1; border-bottom: 1px dotted #999; }
-                    .section { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
-                    .section-title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-                    .footer { margin-top: 30px; font-size: 10px; text-align: center; color: #666; }
-                    .copies { display: flex; justify-content: space-between; margin-top: 20px; }
-                    .copies .copy { width: 48%; border-top: 1px solid #000; padding-top: 5px; text-align: center; font-size: 10px; }
-                    @media print { body { padding: 10px; } }
+                    body { font-family: 'Courier New', monospace; color: #000; font-size: 11px; }
+                    .page { padding: 15px 20px; page-break-after: always; }
+                    .page:last-child { page-break-after: avoid; }
+                    
+                    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+                    .header h1 { font-size: 16px; letter-spacing: 1px; }
+                    .header .subtitle { font-size: 12px; font-weight: bold; }
+                    .header .whatsapp { font-size: 10px; margin-top: 4px; }
+                    
+                    .field { display: flex; margin-bottom: 5px; font-size: 11px; line-height: 1.4; }
+                    .field .label { font-weight: bold; min-width: 130px; }
+                    .field .value { flex: 1; border-bottom: 1px dotted #aaa; padding-left: 5px; }
+                    
+                    .section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #000; }
+                    .section-title { font-size: 11px; font-weight: bold; margin-bottom: 6px; text-decoration: underline; }
+                    
+                    .terms { margin-top: 15px; font-size: 9px; line-height: 1.5; color: #333; }
+                    .terms p { margin-bottom: 3px; }
+                    
+                    .separator { text-align: center; margin: 15px 0; font-size: 10px; color: #999; letter-spacing: 2px; }
+                    
+                    .copy-label { text-align: center; font-size: 9px; margin-top: 10px; padding-top: 5px; border-top: 1px dashed #999; color: #666; }
+                    
+                    .cost-line { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; }
+                    
+                    @media print {
+                        body { padding: 0; }
+                        .page { padding: 10px 15px; }
+                    }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h1>${CONFIG.EMPRESA}</h1>
-                    <p>${CONFIG.SUBTITULO}</p>
-                    <p>Tel: ${CONFIG.TELEFONO}</p>
+                <!-- COPIA 1 - ORIGINAL -->
+                <div class="page">
+                    <div class="header">
+                        <h1>${CONFIG.EMPRESA}</h1>
+                        <div class="subtitle">${CONFIG.SUBTITULO}</div>
+                        <div class="whatsapp">Solo mensajes de WhatsApp ${CONFIG.TELEFONO}</div>
+                    </div>
+                    
+                    <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha || '___/___/______'}</span></div>
+                    <div class="field"><span class="label">Nº de orden:</span><span class="value">${repair.orden}</span></div>
+                    <div class="field"><span class="label">Nombre:</span><span class="value">&nbsp;</span></div>
+                    <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono || ''}</span></div>
+                    <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola || ''}</span></div>
+                    <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || ''}</span></div>
+                    <div class="field"><span class="label">Falla acusada:</span><span class="value">${repair.falla || ''}</span></div>
+                    <div class="field"><span class="label">Obs.:</span><span class="value">${repair.observaciones || ''}</span></div>
+                    
+                    <div class="section">
+                        <div class="field"><span class="label">Costo Presupuesto:</span><span class="value">${repair.costoTecnico || ''}</span></div>
+                        <div class="cost-line">
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <div class="field"><span class="label">Costo de Reparación:</span><span class="value">${repair.precio || ''}</span></div>
+                    </div>
+                    
+                    <div class="terms">
+                        <p>Conservar este comprobante para retirar el equipo</p>
+                        <p>*La demora del presupuesto se estima de 3 a 4 días.</p>
+                        <p>*El valor presupuestado será mantenido por un plazo máximo de 24 Horas, pasado ese lapso será Re presupuestado.</p>
+                        <p>*En caso contrario de no aceptar el presupuesto, el equipo será devuelto en un máximo de 3 dias.</p>
+                        <p>*Pasados los 120 dias de la fecha en la que el equipo fuera reparado y/o devuelto por el tecnico, segun los articulos nº2375,2525 y 2526, el equipo sera considerado como abandonado, quedando a disposicion de la empresa el destino del mismo.</p>
+                    </div>
+                    
+                    <div class="separator">............................. ....................................... ......................................</div>
+                    
+                    <!-- COPIA 2 -->
+                    <div class="header" style="margin-top: 15px;">
+                        <h1>${CONFIG.EMPRESA}</h1>
+                        <div class="subtitle">${CONFIG.SUBTITULO}</div>
+                        <div class="whatsapp">Solo mensajes de WhatsApp ${CONFIG.TELEFONO}</div>
+                    </div>
+                    
+                    <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha || '___/___/______'}</span></div>
+                    <div class="field"><span class="label">Nº de orden:</span><span class="value">${repair.orden}</span></div>
+                    <div class="field"><span class="label">Nombre:</span><span class="value">&nbsp;</span></div>
+                    <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono || ''}</span></div>
+                    <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola || ''}</span></div>
+                    <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || ''}</span></div>
+                    <div class="field"><span class="label">Falla acusada:</span><span class="value">${repair.falla || ''}</span></div>
+                    <div class="field"><span class="label">Observaciones:</span><span class="value">${repair.observaciones || ''}</span></div>
+                    
+                    <div class="field" style="margin-top: 15px;"><span class="label">Costo Reparacion:</span><span class="value">___________________________</span></div>
+                    
+                    <div class="copy-label">Copia - Cliente</div>
                 </div>
-
-                <div class="title">COMPROBANTE DE RECEPCIÓN</div>
-
-                <div class="field"><span class="label">Nº de Orden:</span><span class="value">${repair.orden}</span></div>
-                <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha}</span></div>
-                <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono}</span></div>
-                <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola}</span></div>
-                <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || '—'}</span></div>
-                <div class="field"><span class="label">Falla Reportada:</span><span class="value">${repair.falla}</span></div>
-                <div class="field"><span class="label">Observaciones:</span><span class="value">${repair.observaciones || '—'}</span></div>
-
-                <div class="section">
-                    <div class="section-title">PRESUPUESTO</div>
-                    <div class="field"><span class="label">Tipo de Reparación:</span><span class="value">${repair.reparacion || 'A determinar'}</span></div>
-                    <div class="field"><span class="label">Costo Técnico:</span><span class="value">${repair.costoTecnico || '—'}</span></div>
-                    <div class="field"><span class="label">Precio Reparación:</span><span class="value">${repair.precio ? '$' + repair.precio : 'A determinar'}</span></div>
-                    <div class="field"><span class="label">Confirmado:</span><span class="value">${repair.confirma === 'Si' ? 'SÍ' : repair.confirma === 'No' ? 'NO' : 'PENDIENTE'}</span></div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">ENTREGA</div>
-                    <div class="field"><span class="label">Entrega en Local:</span><span class="value">${repair.entrega || 'Pendiente'}</span></div>
-                    <div class="field"><span class="label">Fecha Retiro:</span><span class="value">${repair.fechaRetiro || 'Pendiente'}</span></div>
-                </div>
-
-                <div class="footer">
-                    <p>*Conservar este comprobante para retirar el equipo*</p>
-                    <p>La demora del presupuesto se estima de 3 a 4 días hábiles.</p>
-                    <p>El valor presupuestado se mantiene por máximo 24 horas.</p>
-                    <p>Pasados 120 días el equipo será considerado abandonado.</p>
-                </div>
-
-                <div class="copies">
-                    <div class="copy">Original - Cliente</div>
-                    <div class="copy">Copia - Local</div>
-                </div>
-
+                
                 <script>window.onload = function() { window.print(); }</script>
             </body>
             </html>

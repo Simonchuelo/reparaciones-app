@@ -143,47 +143,42 @@
             </div>
             <form id="repairForm">
                 <div class="modal-body">
+                    <!-- INGRESO RÁPIDO - Datos para el comprobante -->
+                    <div style="background: rgba(99, 102, 241, 0.1); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; border: 1px solid rgba(99, 102, 241, 0.3);">
+                        <strong style="color: var(--primary-light); font-size: 0.875rem;">📋 Datos del ingresso</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 0.5rem;">(para el comprobante)</span>
+                    </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
-                            <label for="editFecha">Fecha</label>
-                            <input type="text" id="editFecha" class="form-input" placeholder="dd/mm/aaaa">
+                            <label for="editFecha">Fecha *</label>
+                            <input type="text" id="editFecha" class="form-input" placeholder="dd/mm/aaaa" required>
                         </div>
                         <div class="form-group">
-                            <label for="editOrden">Nº de Orden</label>
+                            <label for="editOrden">Nº de Orden *</label>
                             <input type="text" id="editOrden" class="form-input" required>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label for="editTelefono">Teléfono</label>
-                            <input type="text" id="editTelefono" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label for="editConsola">Consola / Dispositivo</label>
-                            <input type="text" id="editConsola" class="form-input">
-                        </div>
+                    <div class="form-group">
+                        <label for="editTelefono">Teléfono *</label>
+                        <input type="text" id="editTelefono" class="form-input" required>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="editConsola">Consola / Dispositivo *</label>
+                            <input type="text" id="editConsola" class="form-input" required>
+                        </div>
                         <div class="form-group">
                             <label for="editSerie">N.º de Serie</label>
                             <input type="text" id="editSerie" class="form-input">
                         </div>
-                        <div class="form-group">
-                            <label for="editTecnico">Técnico</label>
-                            <select id="editTecnico" class="form-select">
-                                <option value="">Seleccionar...</option>
-                                <option value="Dario">Dario</option>
-                                <option value="Gabriel">Gabriel</option>
-                                <option value="local">local</option>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="editFalla">Falla Reportada</label>
-                        <textarea id="editFalla" class="form-textarea" rows="2"></textarea>
+                        <label for="editFalla">Falla Reportada *</label>
+                        <textarea id="editFalla" class="form-textarea" rows="2" required></textarea>
                     </div>
 
                     <div class="form-group">
@@ -191,19 +186,39 @@
                         <textarea id="editObservaciones" class="form-textarea" rows="2"></textarea>
                     </div>
 
-                    <div class="form-group">
-                        <label for="editReparacion">Tipo de Reparación</label>
-                        <textarea id="editReparacion" class="form-textarea" rows="2"></textarea>
+                    <!-- SEPARADOR -->
+                    <div style="border-top: 1px solid var(--border); margin: 1.5rem 0;"></div>
+
+                    <!-- DATOS DEL TÉCNICO - Se completan después -->
+                    <div style="background: rgba(249, 115, 22, 0.1); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; border: 1px solid rgba(249, 115, 22, 0.3);">
+                        <strong style="color: var(--orange); font-size: 0.875rem;">🔧 Datos del técnico</strong>
+                        <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 0.5rem;">(se completan después de la revisión)</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="editTecnico">Técnico</label>
+                            <select id="editTecnico" class="form-select">
+                                <option value="">Sin asignar</option>
+                                <option value="Dario">Dario</option>
+                                <option value="Gabriel">Gabriel</option>
+                                <option value="local">local</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editReparacion">Tipo de Reparación</label>
+                            <input type="text" id="editReparacion" class="form-input">
+                        </div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label for="editCostoTecnico">Costo Técnico ($)</label>
-                            <input type="text" id="editCostoTecnico" class="form-input" placeholder="$0">
+                            <input type="text" id="editCostoTecnico" class="form-input" placeholder="Lo que cobra el técnico">
                         </div>
                         <div class="form-group">
-                            <label for="editPrecio">Precio Reparación ($)</label>
-                            <input type="text" id="editPrecio" class="form-input" placeholder="$0">
+                            <label for="editPrecio">Precio al Cliente ($)</label>
+                            <input type="text" id="editPrecio" class="form-input" placeholder="Precio final para el cliente">
                         </div>
                     </div>
 
@@ -228,7 +243,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary modal-close">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-success" onclick="app.saveAndPrint()">
+                        💾 Guardar e Imprimir
+                    </button>
+                    <button type="submit" class="btn btn-primary">Solo Guardar</button>
                 </div>
             </form>
         </div>
