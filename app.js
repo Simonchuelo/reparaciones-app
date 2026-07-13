@@ -516,6 +516,7 @@ class ReparacionesApp {
         document.getElementById('editFecha').value = repair.fecha || '';
         document.getElementById('editOrden').value = repair.orden || '';
         document.getElementById('editTelefono').value = repair.telefono || '';
+        document.getElementById('editNombre').value = repair.nombre || '';
         document.getElementById('editConsola').value = repair.consola || '';
         document.getElementById('editSerie').value = repair.serie || '';
         document.getElementById('editFalla').value = repair.falla || '';
@@ -639,6 +640,7 @@ class ReparacionesApp {
             fecha: document.getElementById('editFecha').value,
             orden: document.getElementById('editOrden').value,
             telefono: document.getElementById('editTelefono').value,
+            nombre: document.getElementById('editNombre').value,
             consola: document.getElementById('editConsola').value,
             serie: document.getElementById('editSerie').value,
             falla: document.getElementById('editFalla').value,
@@ -712,7 +714,7 @@ class ReparacionesApp {
                     
                     <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha || '___/___/______'}</span></div>
                     <div class="field"><span class="label">Nº de orden:</span><span class="value">${repair.orden}</span></div>
-                    <div class="field"><span class="label">Nombre:</span><span class="value">&nbsp;</span></div>
+                    <div class="field"><span class="label">Nombre:</span><span class="value">${repair.nombre || ''}</span></div>
                     <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono || ''}</span></div>
                     <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola || ''}</span></div>
                     <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || ''}</span></div>
@@ -747,7 +749,7 @@ class ReparacionesApp {
                     
                     <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha || '___/___/______'}</span></div>
                     <div class="field"><span class="label">Nº de orden:</span><span class="value">${repair.orden}</span></div>
-                    <div class="field"><span class="label">Nombre:</span><span class="value">&nbsp;</span></div>
+                    <div class="field"><span class="label">Nombre:</span><span class="value">${repair.nombre || ''}</span></div>
                     <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono || ''}</span></div>
                     <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola || ''}</span></div>
                     <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || ''}</span></div>

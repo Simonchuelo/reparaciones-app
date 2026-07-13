@@ -34,7 +34,8 @@ const CONFIG = {
         CONFIRMA: 10,
         PRECIO: 11,
         ENTREGA: 12,
-        FECHA_RETIRO: 13
+        FECHA_RETIRO: 13,
+        NOMBRE: 14
     },
 
     // Estados derivados de los datos

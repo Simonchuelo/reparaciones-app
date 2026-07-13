@@ -54,7 +54,8 @@ function doGet(e) {
         params.confirma || '',
         params.precio || '',
         params.entrega || '',
-        params.fechaRetiro || ''
+        params.fechaRetiro || '',
+        params.nombre || ''
       ];
 
       const existing = sheet.getDataRange().getValues();
@@ -132,7 +133,8 @@ function rowToObject(row) {
     confirma: String(row[10] || ''),
     precio: String(row[11] || ''),
     entrega: formatDate(row[12]),
-    fechaRetiro: formatDate(row[13])
+    fechaRetiro: formatDate(row[13]),
+    nombre: String(row[14] || '')
   };
 }
 
