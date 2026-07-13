@@ -22,7 +22,7 @@ const CONFIG = {
 
     // Google Apps Script URL para escritura (ver README)
     // Si lo dejás vacío, solo lectura. Creá un Apps Script para habilitar escritura.
-    SCRIPT_URL: '',
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxJDXLHDaDr0z3KE9rJzHecQ449i1HgEsMv6ea2qrt-8Ra5uLj-E31xBDsHhqvx8dY/exec',
 
     // Datos del negocio
     EMPRESA: 'POLYBIUS VIDEOGAMES',
