@@ -138,6 +138,7 @@ class ReparacionesApp {
             const precio = (values[col.PRECIO] || '').trim();
             const entrega = (values[col.ENTREGA] || '').trim();
             const fechaRetiro = (values[col.FECHA_RETIRO] || '').trim();
+            const nombre = (values[col.NOMBRE] || '').trim();
 
             // Derivar estado
             const estado = this.calcularEstado(entrega, fechaRetiro, confirma, reparacion);
@@ -145,7 +146,7 @@ class ReparacionesApp {
             data.push({
                 fecha, orden, telefono, consola, serie, falla,
                 observaciones, tecnico, reparacion, costoTecnico,
-                confirma, precio, entrega, fechaRetiro, estado,
+                confirma, precio, entrega, fechaRetiro, nombre, estado,
                 rawValues: values
             });
         }
@@ -204,7 +205,7 @@ class ReparacionesApp {
             filtered = filtered.filter(r => {
                 const searchFields = [
                     r.orden, r.telefono, r.consola, r.serie,
-                    r.falla, r.tecnico, r.reparacion, r.observaciones
+                    r.falla, r.tecnico, r.reparacion, r.observaciones, r.nombre
                 ].join(' ').toLowerCase();
                 return searchFields.includes(this.searchTerm);
             });
