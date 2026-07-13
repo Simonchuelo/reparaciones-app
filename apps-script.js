@@ -87,9 +87,19 @@ function doPost(e) {
   return doGet(e);
 }
 
+function formatDate(val) {
+  if (val instanceof Date) {
+    const d = val.getDate();
+    const m = val.getMonth() + 1;
+    const y = val.getFullYear();
+    return d + '/' + m + '/' + y;
+  }
+  return String(val || '');
+}
+
 function rowToObject(row) {
   return {
-    fecha: String(row[0] || ''),
+    fecha: formatDate(row[0]),
     orden: String(row[1] || ''),
     telefono: String(row[2] || ''),
     consola: String(row[3] || ''),
@@ -101,8 +111,8 @@ function rowToObject(row) {
     costoTecnico: String(row[9] || ''),
     confirma: String(row[10] || ''),
     precio: String(row[11] || ''),
-    entrega: String(row[12] || ''),
-    fechaRetiro: String(row[13] || '')
+    entrega: formatDate(row[12]),
+    fechaRetiro: formatDate(row[13])
   };
 }
 

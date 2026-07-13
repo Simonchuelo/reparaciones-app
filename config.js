@@ -10,7 +10,7 @@ const CONFIG = {
     SHEET_GID: 1702892376,
 
     // Google Apps Script URL para escritura
-    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxTbPDcgTRtbL9iI5abUgH9Y1WniMxxTvnfGv0leLIK08_BPg_mZ20n9ZS58Kveywa9Dw/exec',
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyxEBo6NxMuQ5DbvzSQzX4xioNm_csLduVR08a5x4PjmJ_xwWYDnpokZFFYEiDBCWo/exec',
 
     // Datos del negocio
     EMPRESA: 'POLYBIUS VIDEOGAMES',
