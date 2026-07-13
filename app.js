@@ -535,12 +535,12 @@ class ReparacionesApp {
         const formData = this.getFormData();
 
         if (!formData.orden || !formData.fecha) {
-            this.showMessage('Completá al menos la fecha y el número de orden', 'error');
+            this.showModalMessage('Completá al menos la fecha y el número de orden', 'error');
             return;
         }
 
         if (!CONFIG.SCRIPT_URL) {
-            this.showMessage('⚠️ Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
+            this.showModalMessage('⚠️ Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
             return;
         }
 
@@ -557,25 +557,23 @@ class ReparacionesApp {
                 this.closeModal();
                 await this.loadData();
             } else {
-                this.showMessage('Error al guardar: ' + (result.error || 'Desconocido'), 'error');
+                this.showModalMessage('Error al guardar: ' + (result.error || 'Desconocido'), 'error');
             }
         } catch (error) {
-            this.showMessage('Error de conexión con Google Apps Script', 'error');
+            this.showModalMessage('Error de conexión con Google Apps Script', 'error');
         }
     }
 
     // ============ SAVE AND PRINT ============
 
     async saveAndPrint() {
-        // Get form data before saving
         const formData = this.getFormData();
         
         if (!formData.orden || !formData.fecha) {
-            this.showMessage('Completá al menos la fecha y el número de orden', 'error');
+            this.showModalMessage('Completá al menos la fecha y el número de orden', 'error');
             return;
         }
 
-        // Try to save first
         if (CONFIG.SCRIPT_URL) {
             try {
                 const response = await fetch(CONFIG.SCRIPT_URL, {
@@ -589,7 +587,6 @@ class ReparacionesApp {
             }
         }
 
-        // Print the receipt
         this.printReceiptFromData(formData);
         this.closeModal();
         this.showMessage('✅ Comprobante abierto para imprimir', 'success');
@@ -771,6 +768,30 @@ class ReparacionesApp {
         msgDiv.className = `message ${type} show`;
         msgDiv.innerHTML = `<span>${text}</span>`;
         setTimeout(() => msgDiv.classList.remove('show'), 6000);
+    }
+
+    showModalMessage(text, type = 'error') {
+        const modal = document.querySelector('.modal');
+        if (!modal) return;
+
+        let msgDiv = document.getElementById('modalMessage');
+        if (!msgDiv) {
+            msgDiv = document.createElement('div');
+            msgDiv.id = 'modalMessage';
+            const modalBody = modal.querySelector('.modal-body');
+            if (modalBody) {
+                modalBody.insertBefore(msgDiv, modalBody.firstChild);
+            }
+        }
+
+        const bgColor = type === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)';
+        const borderColor = type === 'error' ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)';
+        const textColor = type === 'error' ? '#fca5a5' : '#6ee7b7';
+
+        msgDiv.style.cssText = `padding: 0.75rem 1rem; margin-bottom: 1rem; border-radius: 8px; font-size: 0.875rem; background: ${bgColor}; border: 1px solid ${borderColor}; color: ${textColor};`;
+        msgDiv.innerHTML = text;
+
+        setTimeout(() => { msgDiv.remove(); }, 6000);
     }
 }
 
