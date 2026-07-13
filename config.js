@@ -20,9 +20,8 @@ const CONFIG = {
     // API Key de Google Cloud (opcional si la hoja es pública)
     API_KEY: '',
 
-    // Google Apps Script URL para escritura (ver README)
-    // Si lo dejás vacío, solo lectura. Creá un Apps Script para habilitar escritura.
-    SCRIPT_URL: '',
+    // Google Apps Script URL para escritura
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzgosJsBBOo-oyN6YhvKkkPBc0eqECJFxHGYa66dihYyzZRZJfnRF8LvUZHdIQjJ80/exec',
 
     // Datos del negocio
     EMPRESA: 'POLYBIUS VIDEOGAMES',
