@@ -12,42 +12,44 @@
 
 const CONFIG = {
     // ID de tu hoja de cálculo (está en la URL)
-    // Ejemplo: https://docs.google.com/spreadsheets/d/ESTE_ES_EL_ID/edit
     SHEET_ID: '1h9kh8c6G8gYHncoM8JFEiYiTdeKYqPRiIIyXCKOmKc4',
 
-    // Número de la hoja (pestaña) donde están los datos
-    // 0 = primera hoja, 1 = segunda hoja, etc.
-    SHEET_GID: 0,
+    // GID de la hoja "Reparaciones" (donde se guardan los datos)
+    SHEET_GID: 1702892376,
 
     // API Key de Google Cloud (opcional si la hoja es pública)
-    // Si tu hoja está compartida como "Cualquier persona con el enlace puede ver"
-    // no necesitas API Key
     API_KEY: '',
 
-    // Nombre de la empresa (aparece en el header)
+    // Google Apps Script URL para escritura (ver README)
+    // Si lo dejás vacío, solo lectura. Creá un Apps Script para habilitar escritura.
+    SCRIPT_URL: '',
+
+    // Datos del negocio
     EMPRESA: 'POLYBIUS VIDEOGAMES',
     SUBTITULO: 'SERVICIO TÉCNICO',
     TELEFONO: '11-6467-3729',
+    DIRECCION: '',
 
-    // Columnas de la hoja (empezando desde 0)
-    // Ajustá estos números según el orden de tus columnas
+    // Columnas de la hoja "Reparaciones" (empezando desde 0)
     COLUMNAS: {
-        FECHA: 0,           // Columna A
-        ORDEN: 1,           // Columna B
-        CLIENTE: 2,         // Columna C
-        TELEFONO: 3,        // Columna D
-        CONSOLA: 4,         // Columna E
-        SERIE: 5,           // Columna F
-        FALLA: 6,           // Columna G
-        REPARACION: 7,      // Columna H
-        ESTADO: 8,          // Columna I
-        PRECIO: 9,          // Columna J
-        CONFIRMADO: 10,     // Columna K
-        LISTO_RETIRAR: 11,  // Columna L
-        OBSERVACIONES: 12   // Columna M
+        FECHA: 0,           // A - Fecha
+        ORDEN: 1,           // B - Nº Orden
+        TELEFONO: 2,        // C - Teléfono
+        CONSOLA: 3,         // D - Consola
+        SERIE: 4,           // E - N.º de Serie
+        FALLA: 5,           // F - Falla Reportada
+        OBSERVACIONES: 6,   // G - Observaciones
+        TECNICO: 7,         // H - Técnico
+        REPARACION: 8,      // I - Tipo de Reparación
+        COSTO_TECNICO: 9,   // J - Costo Técnico
+        CONFIRMA: 10,       // K - Confirma
+        PRECIO: 11,         // L - Precio de reparación
+        ENTREGA: 12,        // M - Entrega local
+        FECHA_RETIRO: 13    // N - Fecha retiro
     },
 
-    // Estados posibles de una reparación
+    // Estados derivados de los datos
+    // Se calculan automáticamente basándose en los campos
     ESTADOS: {
         RECIBIDO: 'Recibido',
         EN_PRESUPUESTO: 'En presupuesto',
@@ -58,16 +60,8 @@ const CONFIG = {
         CANCELADO: 'Cancelado'
     },
 
-    // Colores para cada estado (para el dashboard)
-    COLORES_ESTADO: {
-        'Recibido': '#3b82f6',
-        'En presupuesto': '#f59e0b',
-        'Esperando repuesto': '#8b5cf6',
-        'En reparación': '#f97316',
-        'Listo para retirar': '#10b981',
-        'Entregado': '#6b7280',
-        'Cancelado': '#ef4444'
-    }
+    // Técnicos disponibles
+    TECNICOS: ['Dario', 'Gabriel', 'local']
 };
 
 // Exportar para uso en módulos

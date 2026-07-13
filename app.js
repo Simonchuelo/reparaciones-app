@@ -11,7 +11,6 @@ class ReparacionesApp {
         this.itemsPerPage = 20;
         this.currentFilter = 'todos';
         this.searchTerm = '';
-        this.sortColumn = CONFIG.COLUMNAS.ORDEN;
         this.sortDirection = 'desc';
         this.isLoading = false;
         this.init();
@@ -23,7 +22,6 @@ class ReparacionesApp {
     }
 
     bindEvents() {
-        // Search
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -33,7 +31,6 @@ class ReparacionesApp {
             });
         }
 
-        // Filter tabs
         document.querySelectorAll('.filter-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -44,22 +41,21 @@ class ReparacionesApp {
             });
         });
 
-        // Add repair button
         const addBtn = document.getElementById('addRepairBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => this.openModal());
         }
 
-        // Modal close
-        document.querySelectorAll('.modal-close, .modal-overlay').forEach(el => {
+        document.querySelectorAll('.modal-close').forEach(el => {
+            el.addEventListener('click', () => this.closeModal());
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(el => {
             el.addEventListener('click', (e) => {
-                if (e.target === el || el.classList.contains('modal-close')) {
-                    this.closeModal();
-                }
+                if (e.target === el) this.closeModal();
             });
         });
 
-        // Form submit
         const form = document.getElementById('repairForm');
         if (form) {
             form.addEventListener('submit', (e) => {
@@ -68,23 +64,18 @@ class ReparacionesApp {
             });
         }
 
-        // Client search
         const clientSearch = document.getElementById('clientSearch');
         if (clientSearch) {
             clientSearch.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    this.searchClientRepair();
-                }
+                if (e.key === 'Enter') this.searchClientRepair();
             });
         }
 
-        // Refresh button
         const refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => this.loadData());
         }
 
-        // Export button
         const exportBtn = document.getElementById('exportBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportToCSV());
@@ -93,28 +84,20 @@ class ReparacionesApp {
 
     async loadData() {
         if (this.isLoading) return;
-        
         this.isLoading = true;
         this.showLoading(true);
 
         try {
             const url = this.buildApiUrl();
             const response = await fetch(url);
-            
-            if (!response.ok) {
-                throw new Error('Error al cargar los datos');
-            }
-
+            if (!response.ok) throw new Error('Error al cargar los datos');
             const text = await response.text();
             this.data = this.parseCSV(text);
             this.applyFilters();
-            
-            if (document.getElementById('stats')) {
-                this.updateStats();
-            }
+            if (document.getElementById('stats')) this.updateStats();
         } catch (error) {
             console.error('Error:', error);
-            this.showMessage('Error al cargar los datos. Verificá la configuración.', 'error');
+            this.showMessage('Error al cargar los datos. Verificá que la hoja esté compartida como pública.', 'error');
         } finally {
             this.isLoading = false;
             this.showLoading(false);
@@ -123,30 +106,48 @@ class ReparacionesApp {
 
     buildApiUrl() {
         const base = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/export?format=csv`;
-        const gid = CONFIG.SHEET_GID > 0 ? `&gid=${CONFIG.SHEET_GID}` : '';
-        const api = CONFIG.API_KEY ? `&key=${CONFIG.API_KEY}` : '';
-        return `${base}${gid}${api}`;
+        const gid = CONFIG.SHEET_GID ? `&gid=${CONFIG.SHEET_GID}` : '';
+        return `${base}${gid}`;
     }
 
     parseCSV(text) {
         const lines = text.split('\n');
         const data = [];
+        const col = CONFIG.COLUMNAS;
 
-        // Skip header rows (first 3 rows are title/subtitle/phone)
-        for (let i = 3; i < lines.length; i++) {
+        for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
-            if (!line) continue;
+            if (!line || line.startsWith(',,,')) continue;
 
             const values = this.parseCSVLine(line);
-            
-            // Skip separator rows
-            if (values[0] && values[0].includes('...')) continue;
-            if (values[0] && values[0].includes('Fecha:') && values[1] && values[1].includes('Nº de orden')) continue;
+            if (values.length < 6) continue;
 
-            const repair = this.mapToRepair(values);
-            if (repair && repair.orden) {
-                data.push(repair);
-            }
+            const orden = (values[col.ORDEN] || '').trim();
+            if (!orden || isNaN(orden)) continue;
+
+            const fecha = (values[col.FECHA] || '').trim();
+            const telefono = (values[col.TELEFONO] || '').trim();
+            const consola = (values[col.CONSOLA] || '').trim();
+            const serie = (values[col.SERIE] || '').trim();
+            const falla = (values[col.FALLA] || '').trim();
+            const observaciones = (values[col.OBSERVACIONES] || '').trim();
+            const tecnico = (values[col.TECNICO] || '').trim();
+            const reparacion = (values[col.REPARACION] || '').trim();
+            const costoTecnico = (values[col.COSTO_TECNICO] || '').trim();
+            const confirma = (values[col.CONFIRMA] || '').trim();
+            const precio = (values[col.PRECIO] || '').trim();
+            const entrega = (values[col.ENTREGA] || '').trim();
+            const fechaRetiro = (values[col.FECHA_RETIRO] || '').trim();
+
+            // Derivar estado
+            const estado = this.calcularEstado(entrega, fechaRetiro, confirma, reparacion);
+
+            data.push({
+                fecha, orden, telefono, consola, serie, falla,
+                observaciones, tecnico, reparacion, costoTecnico,
+                confirma, precio, entrega, fechaRetiro, estado,
+                rawValues: values
+            });
         }
 
         return data;
@@ -159,7 +160,6 @@ class ReparacionesApp {
 
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
-            
             if (char === '"') {
                 inQuotes = !inQuotes;
             } else if (char === ',' && !inQuotes) {
@@ -169,84 +169,51 @@ class ReparacionesApp {
                 current += char;
             }
         }
-        
         result.push(current.trim());
         return result;
     }
 
-    mapToRepair(values) {
-        const col = CONFIG.COLUMNAS;
-        
-        // Clean up values (remove labels like "Fecha:", "Nombre :", etc.)
-        const cleanValue = (val, prefix) => {
-            if (!val) return '';
-            return val.replace(prefix, '').trim();
-        };
-
-        return {
-            fecha: cleanValue(values[col.FECHA], 'Fecha:'),
-            orden: cleanValue(values[col.ORDEN], 'Nº de orden :').replace('Nº de orden :', ''),
-            cliente: cleanValue(values[col.CLIENTE], 'Nombre :'),
-            telefono: cleanValue(values[col.TELEFONO], 'Teléfono :'),
-            consola: cleanValue(values[col.CONSOLA], 'Consola :'),
-            serie: cleanValue(values[col.SERIE], 'N.º de Serie :'),
-            falla: cleanValue(values[col.FALLA], 'Falla acusada:'),
-            reparacion: cleanValue(values[col.REPARACION], 'Costo Reparacion:'),
-            estado: cleanValue(values[col.ESTADO], '') || 'Recibido',
-            precio: cleanValue(values[col.PRECIO], 'Costo de Reparación :'),
-            confirmado: cleanValue(values[col.CONFIRMADO], ''),
-            listoRetirar: cleanValue(values[col.LISTO_RETIRAR], ''),
-            observaciones: cleanValue(values[col.OBSERVACIONES], 'Obs.,'),
-            rawValues: values
-        };
+    calcularEstado(entrega, fechaRetiro, confirma, reparacion) {
+        if (fechaRetiro && fechaRetiro !== '') return 'Entregado';
+        if (entrega && entrega !== '') return 'Listo para retirar';
+        if (reparacion && reparacion !== '') return 'En reparación';
+        if (confirma && confirma.toLowerCase() === 'si') return 'Presupuesto confirmado';
+        if (confirma && confirma.toLowerCase() === 'no') return 'No aceptado';
+        return 'Recibido';
     }
 
     applyFilters() {
         let filtered = [...this.data];
 
-        // Apply status filter
         if (this.currentFilter !== 'todos') {
             filtered = filtered.filter(r => {
                 const estado = r.estado.toLowerCase();
                 switch (this.currentFilter) {
                     case 'recibidos': return estado === 'recibido';
-                    case 'presupuesto': return estado === 'en presupuesto';
+                    case 'presupuesto': return estado === 'presupuesto confirmado';
                     case 'reparacion': return estado === 'en reparación';
                     case 'listos': return estado === 'listo para retirar';
                     case 'entregados': return estado === 'entregado';
-                    case 'cancelados': return estado === 'cancelado';
+                    case 'no_aceptado': return estado === 'no aceptado';
                     default: return true;
                 }
             });
         }
 
-        // Apply search
         if (this.searchTerm) {
             filtered = filtered.filter(r => {
                 const searchFields = [
-                    r.orden,
-                    r.cliente,
-                    r.telefono,
-                    r.consola,
-                    r.serie,
-                    r.falla,
-                    r.estado
+                    r.orden, r.telefono, r.consola, r.serie,
+                    r.falla, r.tecnico, r.reparacion, r.observaciones
                 ].join(' ').toLowerCase();
-                
                 return searchFields.includes(this.searchTerm);
             });
         }
 
-        // Apply sorting
         filtered.sort((a, b) => {
-            const aVal = a.orden || '';
-            const bVal = b.orden || '';
-            
-            if (this.sortDirection === 'asc') {
-                return aVal.localeCompare(bVal, undefined, { numeric: true });
-            } else {
-                return bVal.localeCompare(aVal, undefined, { numeric: true });
-            }
+            const aVal = parseInt(a.orden) || 0;
+            const bVal = parseInt(b.orden) || 0;
+            return this.sortDirection === 'desc' ? bVal - aVal : aVal - bVal;
         });
 
         this.filteredData = filtered;
@@ -279,13 +246,13 @@ class ReparacionesApp {
 
         tbody.innerHTML = pageData.map(repair => `
             <tr data-orden="${repair.orden}">
-                <td><strong>${repair.orden || '—'}</strong></td>
+                <td><strong>${repair.orden}</strong></td>
                 <td>${repair.fecha || '—'}</td>
                 <td>
-                    <div>${repair.cliente || '—'}</div>
-                    ${repair.telefono ? `<small style="color: var(--text-secondary)">${repair.telefono}</small>` : ''}
+                    <div>${repair.consola || '—'}</div>
+                    ${repair.serie ? `<small style="color: var(--text-secondary)">S/N: ${repair.serie}</small>` : ''}
                 </td>
-                <td>${repair.consola || '—'}</td>
+                <td>${repair.telefono || '—'}</td>
                 <td>
                     <span class="status-badge ${this.getStatusClass(repair.estado)}">
                         <span class="status-dot"></span>
@@ -294,14 +261,14 @@ class ReparacionesApp {
                 </td>
                 <td>${repair.precio ? `$${repair.precio}` : '—'}</td>
                 <td>
-                    <span class="confirm-badge ${repair.confirmado.toLowerCase() === 'si' ? 'si' : 'no'}">
-                        ${repair.confirmado || 'No'}
+                    <span class="confirm-badge ${repair.confirma.toLowerCase() === 'si' ? 'si' : 'no'}">
+                        ${repair.confirma || 'Pendiente'}
                     </span>
                 </td>
                 <td>
                     <div class="quick-actions">
                         <button class="action-btn edit" onclick="app.editRepair('${repair.orden}')" data-tooltip="Editar">✏️</button>
-                        <button class="action-btn" onclick="app.viewRepair('${repair.orden}')" data-tooltip="Ver detalle">👁️</button>
+                        <button class="action-btn" onclick="app.printReceipt('${repair.orden}')" data-tooltip="Imprimir comprobante">🖨️</button>
                     </div>
                 </td>
             </tr>
@@ -313,36 +280,19 @@ class ReparacionesApp {
         if (!pagination) return;
 
         const totalPages = Math.ceil(this.filteredData.length / this.itemsPerPage);
-        
-        if (totalPages <= 1) {
-            pagination.innerHTML = '';
-            return;
-        }
+        if (totalPages <= 1) { pagination.innerHTML = ''; return; }
 
-        let html = `
-            <button class="pagination-btn" onclick="app.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>
-                ← Anterior
-            </button>
-        `;
+        let html = `<button class="pagination-btn" onclick="app.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>← Ant.</button>`;
 
         for (let i = 1; i <= totalPages; i++) {
             if (i === 1 || i === totalPages || (i >= this.currentPage - 2 && i <= this.currentPage + 2)) {
-                html += `
-                    <button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" onclick="app.goToPage(${i})">
-                        ${i}
-                    </button>
-                `;
+                html += `<button class="pagination-btn ${i === this.currentPage ? 'active' : ''}" onclick="app.goToPage(${i})">${i}</button>`;
             } else if (i === this.currentPage - 3 || i === this.currentPage + 3) {
                 html += `<span style="color: var(--text-secondary)">...</span>`;
             }
         }
 
-        html += `
-            <button class="pagination-btn" onclick="app.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>
-                Siguiente →
-            </button>
-        `;
-
+        html += `<button class="pagination-btn" onclick="app.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Sig. →</button>`;
         pagination.innerHTML = html;
     }
 
@@ -355,26 +305,25 @@ class ReparacionesApp {
     }
 
     getStatusClass(status) {
-        const statusMap = {
+        const map = {
             'recibido': 'recibido',
-            'en presupuesto': 'presupuesto',
-            'esperando repuesto': 'repuesto',
+            'presupuesto confirmado': 'presupuesto',
             'en reparación': 'reparacion',
             'listo para retirar': 'listo',
             'entregado': 'entregado',
-            'cancelado': 'cancelado'
+            'no aceptado': 'cancelado'
         };
-        return statusMap[status.toLowerCase()] || 'recibido';
+        return map[status.toLowerCase()] || 'recibido';
     }
 
     updateStats() {
         const stats = {
             total: this.data.length,
-            recibidos: this.data.filter(r => r.estado.toLowerCase() === 'recibido').length,
-            enProceso: this.data.filter(r => ['en presupuesto', 'en reparación', 'esperando repuesto'].includes(r.estado.toLowerCase())).length,
-            listos: this.data.filter(r => r.estado.toLowerCase() === 'listo para retirar').length,
-            entregados: this.data.filter(r => r.estado.toLowerCase() === 'entregado').length,
-            cancelados: this.data.filter(r => r.estado.toLowerCase() === 'cancelado').length
+            recibidos: this.data.filter(r => r.estado === 'Recibido').length,
+            enProceso: this.data.filter(r => ['Presupuesto confirmado', 'En reparación'].includes(r.estado)).length,
+            listos: this.data.filter(r => r.estado === 'Listo para retirar').length,
+            entregados: this.data.filter(r => r.estado === 'Entregado').length,
+            noAceptados: this.data.filter(r => r.estado === 'No aceptado').length
         };
 
         const statsEl = document.getElementById('stats');
@@ -407,51 +356,48 @@ class ReparacionesApp {
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon red">❌</div>
-                    <div class="stat-value">${stats.cancelados}</div>
-                    <div class="stat-label">Cancelados</div>
+                    <div class="stat-value">${stats.noAceptados}</div>
+                    <div class="stat-label">No Aceptados</div>
                 </div>
             `;
         }
 
-        // Update filter counts
         document.querySelectorAll('.filter-tab .count').forEach(el => {
             const filter = el.closest('.filter-tab').dataset.filter;
-            const count = this.getFilterCount(filter);
-            el.textContent = count;
+            el.textContent = this.getFilterCount(filter);
         });
     }
 
     getFilterCount(filter) {
         switch (filter) {
             case 'todos': return this.data.length;
-            case 'recibidos': return this.data.filter(r => r.estado.toLowerCase() === 'recibido').length;
-            case 'presupuesto': return this.data.filter(r => r.estado.toLowerCase() === 'en presupuesto').length;
-            case 'reparacion': return this.data.filter(r => r.estado.toLowerCase() === 'en reparación').length;
-            case 'listos': return this.data.filter(r => r.estado.toLowerCase() === 'listo para retirar').length;
-            case 'entregados': return this.data.filter(r => r.estado.toLowerCase() === 'entregado').length;
-            case 'cancelados': return this.data.filter(r => r.estado.toLowerCase() === 'cancelado').length;
+            case 'recibidos': return this.data.filter(r => r.estado === 'Recibido').length;
+            case 'presupuesto': return this.data.filter(r => r.estado === 'Presupuesto confirmado').length;
+            case 'reparacion': return this.data.filter(r => r.estado === 'En reparación').length;
+            case 'listos': return this.data.filter(r => r.estado === 'Listo para retirar').length;
+            case 'entregados': return this.data.filter(r => r.estado === 'Entregado').length;
+            case 'no_aceptado': return this.data.filter(r => r.estado === 'No aceptado').length;
             default: return 0;
         }
     }
 
-    // Client Portal Methods
+    // ============ CLIENT PORTAL ============
+
     searchClientRepair() {
         const input = document.getElementById('clientSearch');
         const orderId = input.value.trim();
-        
         if (!orderId) {
-            this.showMessage('Por favor ingresá tu número de orden', 'error');
+            this.showMessage('Ingresá tu número de orden', 'error');
             return;
         }
 
         const result = this.data.find(r => r.orden === orderId);
         const resultDiv = document.getElementById('repairResult');
-        const errorDiv = document.getElementById('searchError');
 
         if (result) {
-            errorDiv.classList.remove('show');
             this.renderClientResult(result);
             resultDiv.classList.add('show');
+            document.getElementById('searchError').classList.remove('show');
         } else {
             resultDiv.classList.remove('show');
             this.showMessage('No se encontró ninguna reparación con ese número', 'error');
@@ -460,10 +406,9 @@ class ReparacionesApp {
 
     renderClientResult(repair) {
         const resultDiv = document.getElementById('repairResult');
-        
         const estadoClass = this.getStatusClass(repair.estado);
-        const confirmadoClass = repair.confirmado.toLowerCase() === 'si' ? 'si' : 'no';
-        
+        const confirmadoClass = repair.confirma.toLowerCase() === 'si' ? 'si' : 'no';
+
         resultDiv.innerHTML = `
             <div class="repair-header">
                 <div>
@@ -475,15 +420,14 @@ class ReparacionesApp {
                     ${repair.estado}
                 </span>
             </div>
-            
             <div class="repair-grid">
-                <div class="repair-field">
-                    <label>Cliente</label>
-                    <div class="value">${repair.cliente || 'No especificado'}</div>
-                </div>
                 <div class="repair-field">
                     <label>Consola / Dispositivo</label>
                     <div class="value">${repair.consola || 'No especificado'}</div>
+                </div>
+                <div class="repair-field">
+                    <label>N.º de Serie</label>
+                    <div class="value">${repair.serie || 'No especificado'}</div>
                 </div>
                 <div class="repair-field">
                     <label>Falla Reportada</label>
@@ -498,19 +442,23 @@ class ReparacionesApp {
                     <div class="value price">${repair.precio ? `$${repair.precio}` : 'Pendiente'}</div>
                 </div>
                 <div class="repair-field">
-                    <label>Confirmado</label>
+                    <label>Presupuesto</label>
                     <div class="value">
                         <span class="confirm-badge ${confirmadoClass}">
-                            ${repair.confirmado || 'No'}
+                            ${repair.confirma === 'Si' ? 'Aceptado' : repair.confirma === 'No' ? 'No aceptado' : 'Pendiente'}
                         </span>
                     </div>
                 </div>
                 <div class="repair-field">
-                    <label>Listo para Retirar</label>
+                    <label>Entrega en Local</label>
+                    <div class="value">${repair.entrega || 'Pendiente'}</div>
+                </div>
+                <div class="repair-field">
+                    <label>Fecha de Retiro</label>
                     <div class="value">
-                        ${repair.listoRetirar.toLowerCase() === 'si' ? 
-                            '<span class="status-badge listo"><span class="status-dot"></span>SÍ - Retirá cuando quieras</span>' : 
-                            '<span style="color: var(--text-secondary)">Aún no está listo</span>'}
+                        ${repair.fechaRetiro ? 
+                            `<span class="status-badge listo"><span class="status-dot"></span>Retirado el ${repair.fechaRetiro}</span>` : 
+                            '<span style="color: var(--text-secondary)">Aún no retirado</span>'}
                     </div>
                 </div>
                 <div class="repair-field">
@@ -518,7 +466,6 @@ class ReparacionesApp {
                     <div class="value">${repair.observaciones || 'Sin observaciones'}</div>
                 </div>
             </div>
-            
             <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-dark); border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <p style="color: var(--text-secondary); font-size: 0.875rem;">
                     <strong>📞 ¿Tenés preguntas?</strong> Contactanos al ${CONFIG.TELEFONO} (solo WhatsApp)
@@ -527,7 +474,8 @@ class ReparacionesApp {
         `;
     }
 
-    // Modal Methods
+    // ============ MODAL ============
+
     openModal(repair = null) {
         const modal = document.getElementById('modal');
         const title = document.getElementById('modalTitle');
@@ -539,6 +487,8 @@ class ReparacionesApp {
         } else {
             title.textContent = 'Nueva Reparación';
             form.reset();
+            document.getElementById('editFecha').value = this.getToday();
+            document.getElementById('editOrden').value = this.getNextOrden();
         }
 
         modal.classList.add('show');
@@ -549,77 +499,171 @@ class ReparacionesApp {
     }
 
     fillForm(repair) {
+        document.getElementById('editFecha').value = repair.fecha || '';
         document.getElementById('editOrden').value = repair.orden || '';
-        document.getElementById('editCliente').value = repair.cliente || '';
         document.getElementById('editTelefono').value = repair.telefono || '';
         document.getElementById('editConsola').value = repair.consola || '';
         document.getElementById('editSerie').value = repair.serie || '';
         document.getElementById('editFalla').value = repair.falla || '';
-        document.getElementById('editReparacion').value = repair.reparacion || '';
-        document.getElementById('editEstado').value = repair.estado || 'Recibido';
-        document.getElementById('editPrecio').value = repair.precio || '';
-        document.getElementById('editConfirmado').value = repair.confirmado || 'No';
-        document.getElementById('editListo').value = repair.listoRetirar || 'No';
         document.getElementById('editObservaciones').value = repair.observaciones || '';
+        document.getElementById('editTecnico').value = repair.tecnico || '';
+        document.getElementById('editReparacion').value = repair.reparacion || '';
+        document.getElementById('editCostoTecnico').value = repair.costoTecnico || '';
+        document.getElementById('editConfirma').value = repair.confirma || '';
+        document.getElementById('editPrecio').value = repair.precio || '';
+        document.getElementById('editEntrega').value = repair.entrega || '';
+        document.getElementById('editFechaRetiro').value = repair.fechaRetiro || '';
     }
 
     editRepair(orden) {
         const repair = this.data.find(r => r.orden === orden);
-        if (repair) {
-            this.openModal(repair);
-        }
+        if (repair) this.openModal(repair);
     }
 
-    viewRepair(orden) {
-        const repair = this.data.find(r => r.orden === orden);
-        if (repair) {
-            // Open in client view mode
-            window.open(`index.html?orden=${orden}`, '_blank');
-        }
+    getToday() {
+        const d = new Date();
+        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    }
+
+    getNextOrden() {
+        if (this.data.length === 0) return '11362';
+        const max = Math.max(...this.data.map(r => parseInt(r.orden) || 0));
+        return String(max + 1);
     }
 
     async saveRepair() {
-        // Note: This requires Google Sheets API with write access
-        // For simplicity, this is a placeholder that shows the concept
-        // In production, you'd need to set up OAuth2 or a backend proxy
-        
         const formData = {
+            fecha: document.getElementById('editFecha').value,
             orden: document.getElementById('editOrden').value,
-            cliente: document.getElementById('editCliente').value,
             telefono: document.getElementById('editTelefono').value,
             consola: document.getElementById('editConsola').value,
             serie: document.getElementById('editSerie').value,
             falla: document.getElementById('editFalla').value,
+            observaciones: document.getElementById('editObservaciones').value,
+            tecnico: document.getElementById('editTecnico').value,
             reparacion: document.getElementById('editReparacion').value,
-            estado: document.getElementById('editEstado').value,
+            costoTecnico: document.getElementById('editCostoTecnico').value,
+            confirma: document.getElementById('editConfirma').value,
             precio: document.getElementById('editPrecio').value,
-            confirmado: document.getElementById('editConfirmado').value,
-            listoRetirar: document.getElementById('editListo').value,
-            observaciones: document.getElementById('editObservaciones').value
+            entrega: document.getElementById('editEntrega').value,
+            fechaRetiro: document.getElementById('editFechaRetiro').value
         };
 
-        // For now, show a message that editing requires API setup
-        this.showMessage('Para guardar cambios, necesitás configurar la API de Google Sheets con permisos de escritura. Consultá el README para más instrucciones.', 'info');
-        this.closeModal();
+        if (!CONFIG.SCRIPT_URL) {
+            this.showMessage('⚠️ Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(CONFIG.SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(formData),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                this.showMessage('✅ Reparación guardada correctamente', 'success');
+                this.closeModal();
+                await this.loadData();
+            } else {
+                this.showMessage('Error al guardar: ' + (result.error || 'Desconocido'), 'error');
+            }
+        } catch (error) {
+            this.showMessage('Error de conexión con Google Apps Script', 'error');
+        }
     }
 
+    // ============ PRINT RECEIPT ============
+
+    printReceipt(orden) {
+        const repair = this.data.find(r => r.orden === orden);
+        if (!repair) return;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Comprobante - Orden ${orden}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #000; }
+                    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+                    .header h1 { font-size: 18px; }
+                    .header p { font-size: 12px; }
+                    .title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 15px; }
+                    .field { display: flex; margin-bottom: 6px; font-size: 12px; }
+                    .field .label { font-weight: bold; width: 140px; }
+                    .field .value { flex: 1; border-bottom: 1px dotted #999; }
+                    .section { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
+                    .section-title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+                    .footer { margin-top: 30px; font-size: 10px; text-align: center; color: #666; }
+                    .copies { display: flex; justify-content: space-between; margin-top: 20px; }
+                    .copies .copy { width: 48%; border-top: 1px solid #000; padding-top: 5px; text-align: center; font-size: 10px; }
+                    @media print { body { padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${CONFIG.EMPRESA}</h1>
+                    <p>${CONFIG.SUBTITULO}</p>
+                    <p>Tel: ${CONFIG.TELEFONO}</p>
+                </div>
+
+                <div class="title">COMPROBANTE DE RECEPCIÓN</div>
+
+                <div class="field"><span class="label">Nº de Orden:</span><span class="value">${repair.orden}</span></div>
+                <div class="field"><span class="label">Fecha:</span><span class="value">${repair.fecha}</span></div>
+                <div class="field"><span class="label">Teléfono:</span><span class="value">${repair.telefono}</span></div>
+                <div class="field"><span class="label">Consola:</span><span class="value">${repair.consola}</span></div>
+                <div class="field"><span class="label">N.º de Serie:</span><span class="value">${repair.serie || '—'}</span></div>
+                <div class="field"><span class="label">Falla Reportada:</span><span class="value">${repair.falla}</span></div>
+                <div class="field"><span class="label">Observaciones:</span><span class="value">${repair.observaciones || '—'}</span></div>
+
+                <div class="section">
+                    <div class="section-title">PRESUPUESTO</div>
+                    <div class="field"><span class="label">Tipo de Reparación:</span><span class="value">${repair.reparacion || 'A determinar'}</span></div>
+                    <div class="field"><span class="label">Costo Técnico:</span><span class="value">${repair.costoTecnico || '—'}</span></div>
+                    <div class="field"><span class="label">Precio Reparación:</span><span class="value">${repair.precio ? '$' + repair.precio : 'A determinar'}</span></div>
+                    <div class="field"><span class="label">Confirmado:</span><span class="value">${repair.confirma === 'Si' ? 'SÍ' : repair.confirma === 'No' ? 'NO' : 'PENDIENTE'}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">ENTREGA</div>
+                    <div class="field"><span class="label">Entrega en Local:</span><span class="value">${repair.entrega || 'Pendiente'}</span></div>
+                    <div class="field"><span class="label">Fecha Retiro:</span><span class="value">${repair.fechaRetiro || 'Pendiente'}</span></div>
+                </div>
+
+                <div class="footer">
+                    <p>*Conservar este comprobante para retirar el equipo*</p>
+                    <p>La demora del presupuesto se estima de 3 a 4 días hábiles.</p>
+                    <p>El valor presupuestado se mantiene por máximo 24 horas.</p>
+                    <p>Pasados 120 días el equipo será considerado abandonado.</p>
+                </div>
+
+                <div class="copies">
+                    <div class="copy">Original - Cliente</div>
+                    <div class="copy">Copia - Local</div>
+                </div>
+
+                <script>window.onload = function() { window.print(); }</script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+
+    // ============ EXPORT ============
+
     exportToCSV() {
-        const headers = ['Orden', 'Fecha', 'Cliente', 'Teléfono', 'Consola', 'Serie', 'Falla', 'Reparación', 'Estado', 'Precio', 'Confirmado', 'Listo Retirar', 'Observaciones'];
-        
+        const headers = ['Fecha', 'Nº Orden', 'Teléfono', 'Consola', 'N. Serie', 'Falla', 'Observaciones', 'Técnico', 'Reparación', 'Costo Técnico', 'Confirma', 'Precio', 'Entrega', 'Fecha Retiro', 'Estado'];
+
         const rows = this.filteredData.map(r => [
-            r.orden,
-            r.fecha,
-            r.cliente,
-            r.telefono,
-            r.consola,
-            r.serie,
-            r.falla,
-            r.reparacion,
-            r.estado,
-            r.precio,
-            r.confirmado,
-            r.listoRetirar,
-            r.observaciones
+            r.fecha, r.orden, r.telefono, r.consola, r.serie,
+            r.falla, r.observaciones, r.tecnico, r.reparacion,
+            r.costoTecnico, r.confirma, r.precio, r.entrega,
+            r.fechaRetiro, r.estado
         ].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(','));
 
         const csv = [headers.join(','), ...rows].join('\n');
@@ -630,43 +674,35 @@ class ReparacionesApp {
         link.click();
     }
 
+    // ============ UTILS ============
+
     showLoading(show) {
         const loader = document.getElementById('loading');
-        if (loader) {
-            loader.style.display = show ? 'flex' : 'none';
-        }
+        if (loader) loader.style.display = show ? 'flex' : 'none';
     }
 
     showMessage(text, type = 'info') {
         const existing = document.querySelector('.message.show');
         if (existing) existing.classList.remove('show');
 
-        // Create or find message container
         let msgDiv = document.getElementById('appMessage');
         if (!msgDiv) {
             msgDiv = document.createElement('div');
             msgDiv.id = 'appMessage';
             msgDiv.className = `message ${type}`;
-            
             const container = document.querySelector('.container') || document.body;
             container.insertBefore(msgDiv, container.firstChild);
         }
 
         msgDiv.className = `message ${type} show`;
         msgDiv.innerHTML = `<span>${text}</span>`;
-        
-        setTimeout(() => {
-            msgDiv.classList.remove('show');
-        }, 5000);
+        setTimeout(() => msgDiv.classList.remove('show'), 6000);
     }
 }
 
-// Initialize app
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new ReparacionesApp();
-    
-    // Check for order parameter in URL
     const params = new URLSearchParams(window.location.search);
     const orden = params.get('orden');
     if (orden) {
