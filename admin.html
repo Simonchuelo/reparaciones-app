@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POLYBIUS VIDEOGAMES - Panel de Administración</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎮</div>
+            <div class="logo-text">
+                <h1 id="empresaName">POLYBIUS VIDEOGAMES</h1>
+                <p id="subtitulo">SERVICIO TÉCNICO - Panel Admin</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-link">🔍 Portal Cliente</a>
+            <a href="admin.html" class="nav-link active">📊 Panel Admin</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Stats Section -->
+        <div id="stats" class="stats-grid">
+            <!-- Stats will be loaded dynamically -->
+        </div>
+
+        <!-- Search Section -->
+        <div class="card search-section">
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Buscar por orden, cliente, teléfono, consola, serie..."
+                    >
+                </div>
+                <button class="btn btn-primary" onclick="document.getElementById('searchInput').focus()">
+                    Buscar
+                </button>
+                <button class="btn btn-secondary" id="refreshBtn">
+                    🔄 Actualizar
+                </button>
+                <button class="btn btn-secondary" id="exportBtn">
+                    📥 Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="todos">
+                Todos <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="recibidos">
+                📥 Recibidos <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="presupuesto">
+                💰 En Presupuesto <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="reparacion">
+                🔧 En Reparación <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="listos">
+                ✅ Listos <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="entregados">
+                📦 Entregados <span class="count">0</span>
+            </button>
+            <button class="filter-tab" data-filter="cancelados">
+                ❌ Cancelados <span class="count">0</span>
+            </button>
+        </div>
+
+        <!-- Table Section -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Reparaciones</h2>
+                <button class="btn btn-success" id="addRepairBtn">
+                    ➕ Nueva Reparación
+                </button>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Cargando reparaciones...</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Orden</th>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Consola</th>
+                            <th>Estado</th>
+                            <th>Precio</th>
+                            <th>Confirmado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="repairTableBody">
+                        <!-- Table rows will be loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="pagination"></div>
+        </div>
+
+        <!-- Quick Info -->
+        <div class="card" style="margin-top: 1rem;">
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+                <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>💡 Tip:</strong> Hacé clic en una fila para ver el detalle completo. 
+                    Usá los filtros para encontrar rápidamente lo que necesitás.
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <strong>🔗 Link para clientes:</strong> 
+                    <code style="background: var(--bg-dark); padding: 0.25rem 0.5rem; border-radius: 4px;">
+                        index.html?orden=NÚMERO
+                    </code>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Editar Reparación</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="repairForm">
+                <div class="modal-body">
+                    <input type="hidden" id="editOrden">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="editCliente">Cliente</label>
+                            <input type="text" id="editCliente" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTelefono">Teléfono</label>
+                            <input type="text" id="editTelefono" class="form-input">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="editConsola">Consola / Dispositivo</label>
+                            <input type="text" id="editConsola" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="editSerie">N.º de Serie</label>
+                            <input type="text" id="editSerie" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editFalla">Falla Reportada</label>
+                        <textarea id="editFalla" class="form-textarea"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editReparacion">Tipo de Reparación</label>
+                        <textarea id="editReparacion" class="form-textarea"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="editEstado">Estado</label>
+                            <select id="editEstado" class="form-select">
+                                <option value="Recibido">📥 Recibido</option>
+                                <option value="En presupuesto">💰 En presupuesto</option>
+                                <option value="Esperando repuesto">📦 Esperando repuesto</option>
+                                <option value="En reparación">🔧 En reparación</option>
+                                <option value="Listo para retirar">✅ Listo para retirar</option>
+                                <option value="Entregado">📦 Entregado</option>
+                                <option value="Cancelado">❌ Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPrecio">Precio ($)</label>
+                            <input type="number" id="editPrecio" class="form-input" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="editConfirmado">Confirmado</label>
+                            <select id="editConfirmado" class="form-select">
+                                <option value="No">No</option>
+                                <option value="Si">Sí</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editListo">¿Listo para retirar?</label>
+                        <select id="editListo" class="form-select">
+                            <option value="No">No</option>
+                            <option value="Si">Sí</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editObservaciones">Observaciones</label>
+                        <textarea id="editObservaciones" class="form-textarea"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-close">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // Apply config to page
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('empresaName').textContent = CONFIG.EMPRESA;
+            document.getElementById('subtitulo').textContent = CONFIG.SUBTITULO + ' - Panel Admin';
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

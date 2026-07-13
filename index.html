@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POLYBIUS VIDEOGAMES - Consultar Reparación</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .client-header {
+            text-align: center;
+            padding: 2rem 1rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+        .client-header .logo-icon {
+            margin: 0 auto 1rem;
+        }
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-hero {
+            text-align: center;
+            padding: 4rem 1rem;
+        }
+        .search-hero h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .search-hero p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+        }
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .search-form .search-input-wrapper {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+        }
+        .search-form .btn {
+            min-width: 150px;
+        }
+        .recent-orders {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .recent-orders h3 {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+        .footer a {
+            color: var(--primary-light);
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+        .feature-card {
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .feature-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+        .feature-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .feature-card p {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header client-header">
+        <div class="logo">
+            <div class="logo-icon">🎮</div>
+            <div class="logo-text">
+                <h1 id="empresaName">POLYBIUS VIDEOGAMES</h1>
+                <p id="subtitulo">SERVICIO TÉCNICO</p>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-link active">🔍 Consultar</a>
+            <a href="admin.html" class="nav-link">📊 Panel Admin</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="search-hero">
+            <h2>¿Querés saber el estado de tu reparación?</h2>
+            <p>Ingresá tu número de orden y enterate al instante</p>
+            
+            <div class="search-container">
+                <div class="search-form">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input 
+                            type="text" 
+                            id="clientSearch" 
+                            class="search-input" 
+                            placeholder="Ingresá tu Nº de orden (ej: 11361)"
+                            autocomplete="off"
+                        >
+                    </div>
+                    <button class="btn btn-primary btn-lg" onclick="app.searchClientRepair()">
+                        Consultar
+                    </button>
+                </div>
+                
+                <div id="searchError" class="message error" style="margin-top: 1rem;">
+                    <span></span>
+                </div>
+            </div>
+        </section>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Buscando tu reparación...</p>
+        </div>
+
+        <div id="repairResult" class="repair-result"></div>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="icon">📋</div>
+                <h4>Estado en Tiempo Real</h4>
+                <p>Conocé en qué etapa está tu reparación</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">💰</div>
+                <h4>Costos Claros</h4>
+                <p>Verificá el precio de la reparación</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">✅</div>
+                <h4>Confirmá tu Presupuesto</h4>
+                <p>Aceptá o rechazá el presupuesto</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🔔</div>
+                <h4>Listo para Retirar</h4>
+                <p>Enterate cuando tu equipo esté listo</p>
+            </div>
+        </section>
+
+        <div class="recent-orders">
+            <h3>📞 ¿Tenés dudas? Contactanos</h3>
+            <p style="text-align: center; color: var(--text-secondary);">
+                WhatsApp: <strong id="telefonoFooter">11-6467-3729</strong> (solo mensajes)
+            </p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>© 2026 <span id="footerEmpresa">POLYBIUS VIDEOGAMES</span> - Servicio Técnico</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="admin.html">Panel de Administración</a>
+        </p>
+    </footer>
+
+    <script src="config.js"></script>
+    <script>
+        // Apply config to page
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('empresaName').textContent = CONFIG.EMPRESA;
+            document.getElementById('subtitulo').textContent = CONFIG.SUBTITULO;
+            document.getElementById('telefonoFooter').textContent = CONFIG.TELEFONO;
+            document.getElementById('footerEmpresa').textContent = CONFIG.EMPRESA;
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
