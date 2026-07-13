@@ -531,6 +531,16 @@ class ReparacionesApp {
         return String(max + 1);
     }
 
+    // Helper: build URL with query params
+    buildSaveUrl(data) {
+        const params = new URLSearchParams();
+        params.set('action', 'save');
+        Object.entries(data).forEach(([key, val]) => {
+            if (val !== undefined && val !== null) params.set(key, String(val));
+        });
+        return CONFIG.SCRIPT_URL + '?' + params.toString();
+    }
+
     async saveRepair() {
         const formData = this.getFormData();
 
@@ -545,22 +555,18 @@ class ReparacionesApp {
         }
 
         try {
-            const response = await fetch(CONFIG.SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(formData),
-                headers: { 'Content-Type': 'application/json' }
-            });
+            const response = await fetch(this.buildSaveUrl(formData));
             const result = await response.json();
 
             if (result.success) {
-                this.showMessage('✅ Reparación guardada correctamente', 'success');
+                this.showMessage('Reparación guardada correctamente', 'success');
                 this.closeModal();
                 await this.loadData();
             } else {
                 this.showModalMessage('Error al guardar: ' + (result.error || 'Desconocido'), 'error');
             }
         } catch (error) {
-            this.showModalMessage('Error de conexión con Google Apps Script', 'error');
+            this.showModalMessage('Error de conexión con Google Apps Script: ' + error.message, 'error');
         }
     }
 
@@ -576,12 +582,7 @@ class ReparacionesApp {
 
         if (CONFIG.SCRIPT_URL) {
             try {
-                const response = await fetch(CONFIG.SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(formData),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                await response.json();
+                await fetch(this.buildSaveUrl(formData));
             } catch (e) {
                 // Continue to print even if save fails
             }
@@ -589,7 +590,7 @@ class ReparacionesApp {
 
         this.printReceiptFromData(formData);
         this.closeModal();
-        this.showMessage('✅ Comprobante abierto para imprimir', 'success');
+        this.showMessage('Comprobante abierto para imprimir', 'success');
         await this.loadData();
     }
 
