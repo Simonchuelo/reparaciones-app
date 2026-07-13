@@ -531,14 +531,49 @@ class ReparacionesApp {
         return String(max + 1);
     }
 
-    // Helper: build URL with query params
-    buildSaveUrl(data) {
-        const params = new URLSearchParams();
-        params.set('action', 'save');
-        Object.entries(data).forEach(([key, val]) => {
-            if (val !== undefined && val !== null) params.set(key, String(val));
+    // Helper: save via hidden form submission (bypasses CORS)
+    submitViaForm(data) {
+        return new Promise((resolve) => {
+            const iframeName = 'saveFrame_' + Date.now();
+            const iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            const form = document.createElement('form');
+            form.method = 'GET';
+            form.action = CONFIG.SCRIPT_URL;
+            form.target = iframeName;
+
+            const addField = (name, value) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value || '';
+                form.appendChild(input);
+            };
+
+            addField('action', 'save');
+            Object.entries(data).forEach(([key, val]) => addField(key, val));
+
+            document.body.appendChild(form);
+
+            iframe.onload = () => {
+                setTimeout(() => {
+                    form.remove();
+                    iframe.remove();
+                    resolve();
+                }, 500);
+            };
+
+            form.submit();
+
+            setTimeout(() => {
+                form.remove();
+                iframe.remove();
+                resolve();
+            }, 5000);
         });
-        return CONFIG.SCRIPT_URL + '?' + params.toString();
     }
 
     async saveRepair() {
@@ -550,23 +585,17 @@ class ReparacionesApp {
         }
 
         if (!CONFIG.SCRIPT_URL) {
-            this.showModalMessage('⚠️ Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
+            this.showModalMessage('Para guardar necesitás configurar Google Apps Script. Verificá el README.', 'error');
             return;
         }
 
         try {
-            const response = await fetch(this.buildSaveUrl(formData));
-            const result = await response.json();
-
-            if (result.success) {
-                this.showMessage('Reparación guardada correctamente', 'success');
-                this.closeModal();
-                await this.loadData();
-            } else {
-                this.showModalMessage('Error al guardar: ' + (result.error || 'Desconocido'), 'error');
-            }
+            await this.submitViaForm(formData);
+            this.showMessage('Reparación guardada correctamente', 'success');
+            this.closeModal();
+            setTimeout(() => this.loadData(), 1500);
         } catch (error) {
-            this.showModalMessage('Error de conexión con Google Apps Script: ' + error.message, 'error');
+            this.showModalMessage('Error al guardar: ' + error.message, 'error');
         }
     }
 
@@ -574,7 +603,7 @@ class ReparacionesApp {
 
     async saveAndPrint() {
         const formData = this.getFormData();
-        
+
         if (!formData.orden || !formData.fecha) {
             this.showModalMessage('Completá al menos la fecha y el número de orden', 'error');
             return;
@@ -582,7 +611,7 @@ class ReparacionesApp {
 
         if (CONFIG.SCRIPT_URL) {
             try {
-                await fetch(this.buildSaveUrl(formData));
+                await this.submitViaForm(formData);
             } catch (e) {
                 // Continue to print even if save fails
             }
@@ -591,7 +620,7 @@ class ReparacionesApp {
         this.printReceiptFromData(formData);
         this.closeModal();
         this.showMessage('Comprobante abierto para imprimir', 'success');
-        await this.loadData();
+        setTimeout(() => this.loadData(), 1500);
     }
 
     getFormData() {
