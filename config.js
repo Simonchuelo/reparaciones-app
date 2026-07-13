@@ -48,7 +48,10 @@ const CONFIG = {
     },
 
     // Técnicos disponibles
-    TECNICOS: ['Dario', 'Gabriel', 'local']
+    TECNICOS: ['Dario', 'Gabriel', 'local'],
+
+    // Contraseña del panel admin (base64)
+    ADMIN_PASS: 'NDA0MTAwcXdlMDA='
 };
 
 if (typeof module !== 'undefined' && module.exports) {

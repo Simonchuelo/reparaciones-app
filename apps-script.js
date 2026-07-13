@@ -71,9 +71,29 @@ function doGet(e) {
         sheet.getRange(targetRow, 1, 1, row.length).setValues([row]);
         return jsonResponse({ success: true, action: 'updated', orden: params.orden });
       } else {
-        sheet.appendRow(row);
+        sheet.insertRowBefore(2);
+        sheet.getRange(2, 1, 1, row.length).setValues([row]);
         return jsonResponse({ success: true, action: 'created', orden: params.orden });
       }
+    }
+
+    // CONFIRMAR / CANCELAR PRESUPUESTO (desde portal cliente)
+    if (action === 'confirm') {
+      const orden = params.orden;
+      const valor = params.confirma;
+
+      if (!orden || !valor) {
+        return jsonResponse({ success: false, error: 'Falta orden o valor de confirmación' });
+      }
+
+      const existing = sheet.getDataRange().getValues();
+      for (let i = 1; i < existing.length; i++) {
+        if (String(existing[i][1]) === String(orden)) {
+          sheet.getRange(i + 1, 11).setValue(valor);
+          return jsonResponse({ success: true, action: 'confirmed', orden: orden, confirma: valor });
+        }
+      }
+      return jsonResponse({ success: false, error: 'Orden no encontrada' });
     }
 
     return jsonResponse({ success: false, error: 'Acción no válida' });

@@ -408,6 +408,7 @@ class ReparacionesApp {
         const resultDiv = document.getElementById('repairResult');
         const estadoClass = this.getStatusClass(repair.estado);
         const confirmadoClass = repair.confirma.toLowerCase() === 'si' ? 'si' : 'no';
+        const pendiente = !repair.confirma || repair.confirma === '';
 
         resultDiv.innerHTML = `
             <div class="repair-header">
@@ -439,7 +440,7 @@ class ReparacionesApp {
                 </div>
                 <div class="repair-field">
                     <label>Costo de Reparación</label>
-                    <div class="value price">${repair.precio ? `$${repair.precio}` : 'Pendiente'}</div>
+                    <div class="value price">${repair.precio ? '$' + repair.precio : 'Pendiente'}</div>
                 </div>
                 <div class="repair-field">
                     <label>Presupuesto</label>
@@ -457,7 +458,7 @@ class ReparacionesApp {
                     <label>Fecha de Retiro</label>
                     <div class="value">
                         ${repair.fechaRetiro ? 
-                            `<span class="status-badge listo"><span class="status-dot"></span>Retirado el ${repair.fechaRetiro}</span>` : 
+                            '<span class="status-badge listo"><span class="status-dot"></span>Retirado el ' + repair.fechaRetiro + '</span>' : 
                             '<span style="color: var(--text-secondary)">Aún no retirado</span>'}
                     </div>
                 </div>
@@ -466,12 +467,41 @@ class ReparacionesApp {
                     <div class="value">${repair.observaciones || 'Sin observaciones'}</div>
                 </div>
             </div>
+            ${pendiente && repair.precio ? `
+            <div class="client-actions">
+                <p class="client-actions-label">El presupuesto es de <strong>$${repair.precio}</strong>. ¿Aceptás?</p>
+                <div class="client-actions-buttons">
+                    <button class="btn btn-success btn-lg" onclick="app.confirmRepair('${repair.orden}', 'Si')">
+                        Aceptar presupuesto
+                    </button>
+                    <button class="btn btn-danger btn-lg" onclick="app.confirmRepair('${repair.orden}', 'No')">
+                        Rechazar
+                    </button>
+                </div>
+            </div>
+            ` : ''}
             <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-dark); border-radius: var(--radius-sm); border: 1px solid var(--border);">
                 <p style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <strong>📞 ¿Tenés preguntas?</strong> Contactanos al ${CONFIG.TELEFONO} (solo WhatsApp)
+                    <strong>Tenés preguntas?</strong> Contactanos al ${CONFIG.TELEFONO} (solo WhatsApp)
                 </p>
             </div>
         `;
+    }
+
+    async confirmRepair(orden, valor) {
+        const btns = document.querySelectorAll('.client-actions-buttons .btn');
+        btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+
+        try {
+            await this.submitToScript({ action: 'confirm', orden: orden, confirma: valor });
+            this.showMessage(valor === 'Si' ? 'Presupuesto aceptado. ¡Gracias!' : 'Presupuesto rechazado.', valor === 'Si' ? 'success' : 'info');
+            await this.loadData();
+            const repair = this.data.find(r => r.orden === orden);
+            if (repair) this.renderClientResult(repair);
+        } catch (error) {
+            this.showMessage('Error al enviar la respuesta. Intentá de nuevo.', 'error');
+            btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
+        }
     }
 
     // ============ MODAL ============
@@ -531,10 +561,10 @@ class ReparacionesApp {
         return String(max + 1);
     }
 
-    // Helper: save via hidden form submission (bypasses CORS)
-    submitViaForm(data) {
+    // Helper: submit params to Apps Script via hidden form (bypasses CORS)
+    submitToScript(params) {
         return new Promise((resolve) => {
-            const iframeName = 'saveFrame_' + Date.now();
+            const iframeName = 'scriptFrame_' + Date.now();
             const iframe = document.createElement('iframe');
             iframe.name = iframeName;
             iframe.style.display = 'none';
@@ -545,16 +575,13 @@ class ReparacionesApp {
             form.action = CONFIG.SCRIPT_URL;
             form.target = iframeName;
 
-            const addField = (name, value) => {
+            Object.entries(params).forEach(([key, val]) => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
-                input.name = name;
-                input.value = value || '';
+                input.name = key;
+                input.value = val || '';
                 form.appendChild(input);
-            };
-
-            addField('action', 'save');
-            Object.entries(data).forEach(([key, val]) => addField(key, val));
+            });
 
             document.body.appendChild(form);
 
@@ -590,7 +617,7 @@ class ReparacionesApp {
         }
 
         try {
-            await this.submitViaForm(formData);
+            await this.submitToScript({ action: 'save', ...formData });
             this.showMessage('Reparación guardada correctamente', 'success');
             this.closeModal();
             setTimeout(() => this.loadData(), 1500);
@@ -611,7 +638,7 @@ class ReparacionesApp {
 
         if (CONFIG.SCRIPT_URL) {
             try {
-                await this.submitViaForm(formData);
+                await this.submitToScript({ action: 'save', ...formData });
             } catch (e) {
                 // Continue to print even if save fails
             }

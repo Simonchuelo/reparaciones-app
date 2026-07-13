@@ -10,6 +10,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Auth Overlay -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-icon">🔒</div>
+            <h2>Panel de Administración</h2>
+            <p>Ingresá la contraseña para continuar</p>
+            <div class="auth-form">
+                <input type="password" id="authPassword" class="form-input" placeholder="Contraseña" onkeypress="if(event.key==='Enter')checkAuth()">
+                <button class="btn btn-primary" onclick="checkAuth()">Ingresar</button>
+            </div>
+            <div id="authError" class="auth-error">Contraseña incorrecta</div>
+        </div>
+    </div>
+
     <header class="header">
         <div class="logo">
             <div class="logo-icon">🎮</div>
@@ -254,8 +268,21 @@
 
     <script src="config.js"></script>
     <script>
-        // Apply config to page
+        function checkAuth() {
+            const input = document.getElementById('authPassword');
+            if (btoa(input.value) === CONFIG.ADMIN_PASS) {
+                sessionStorage.setItem('adminAuth', 'true');
+                document.getElementById('authOverlay').classList.add('hidden');
+            } else {
+                document.getElementById('authError').style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
         document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('adminAuth') === 'true') {
+                document.getElementById('authOverlay').classList.add('hidden');
+            }
             document.getElementById('empresaName').textContent = CONFIG.EMPRESA;
             document.getElementById('subtitulo').textContent = CONFIG.SUBTITULO + ' - Panel Admin';
         });
