@@ -16,6 +16,7 @@ const CONFIG = {
     EMPRESA: 'POLYBIUS VIDEOGAMES',
     SUBTITULO: 'SERVICIO TÉCNICO',
     TELEFONO: '11-6467-3729',
+    WHATSAPP: '5491164673729',
     DIRECCION: '',
 
     // Columnas de la hoja "Reparaciones" (empezando desde 0)

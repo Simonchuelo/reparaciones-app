@@ -471,12 +471,12 @@ class ReparacionesApp {
             <div class="client-actions">
                 <p class="client-actions-label">El presupuesto es de <strong>$${repair.precio}</strong>. ¿Aceptás?</p>
                 <div class="client-actions-buttons">
-                    <button class="btn btn-success btn-lg" onclick="app.confirmRepair('${repair.orden}', 'Si')">
+                    <a class="btn btn-success btn-lg" href="https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero aceptar la reparacion. Presupuesto: $' + repair.precio)}" target="_blank">
                         Aceptar presupuesto
-                    </button>
-                    <button class="btn btn-danger btn-lg" onclick="app.confirmRepair('${repair.orden}', 'No')">
+                    </a>
+                    <a class="btn btn-danger btn-lg" href="https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero cancelar la reparacion.')}" target="_blank">
                         Rechazar
-                    </button>
+                    </a>
                 </div>
             </div>
             ` : ''}
@@ -486,22 +486,6 @@ class ReparacionesApp {
                 </p>
             </div>
         `;
-    }
-
-    async confirmRepair(orden, valor) {
-        const btns = document.querySelectorAll('.client-actions-buttons .btn');
-        btns.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
-
-        try {
-            await this.submitToScript({ action: 'confirm', orden: orden, confirma: valor });
-            this.showMessage(valor === 'Si' ? 'Presupuesto aceptado. ¡Gracias!' : 'Presupuesto rechazado.', valor === 'Si' ? 'success' : 'info');
-            await this.loadData();
-            const repair = this.data.find(r => r.orden === orden);
-            if (repair) this.renderClientResult(repair);
-        } catch (error) {
-            this.showMessage('Error al enviar la respuesta. Intentá de nuevo.', 'error');
-            btns.forEach(b => { b.disabled = false; b.style.opacity = '1'; });
-        }
     }
 
     // ============ MODAL ============

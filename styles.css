@@ -217,6 +217,7 @@ body {
     align-items: center;
     gap: 0.5rem;
     text-decoration: none;
+    color: white;
 }
 
 .btn-primary {
@@ -1018,4 +1019,9 @@ input[type="number"] {
     gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
+}
+
+.client-actions-buttons .btn {
+    text-decoration: none;
+    color: white;
 }
