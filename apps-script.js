@@ -5,6 +5,9 @@
 // Permite guardar reparaciones desde el panel web
 // =====================================================
 
+// ID de tu hoja de cálculo
+const SPREADSHEET_ID = '1h9kh8c6G8gYHncoM8JFEiYiTdeKYqPRiIIyXCKOmKc4';
+
 // Hoja donde se guardan los datos
 const SHEET_NAME = 'Reparaciones';
 
@@ -19,7 +22,7 @@ const HEADERS = [
 // GET - Consultar reparaciones
 // =====================================================
 function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
   
   // Si pide una orden específica
@@ -63,7 +66,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(SHEET_NAME);
     
     // Preparar fila
     const row = [
