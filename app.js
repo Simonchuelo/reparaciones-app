@@ -405,11 +405,31 @@ class ReparacionesApp {
         }
     }
 
+    async confirmarPresupuesto(orden, valor, waUrl) {
+        if (CONFIG.SCRIPT_URL) {
+            await this.submitToScript({
+                action: 'confirm',
+                orden: orden,
+                confirma: valor
+            });
+        }
+
+        const repair = this.data.find(r => r.orden === orden);
+        if (repair) repair.confirma = valor;
+
+        if (waUrl) window.open(waUrl, '_blank');
+
+        this.renderClientResult(repair);
+    }
+
     renderClientResult(repair) {
         const resultDiv = document.getElementById('repairResult');
         const estadoClass = this.getStatusClass(repair.estado);
-        const confirmadoClass = repair.confirma.toLowerCase() === 'si' ? 'si' : 'no';
+        const confirmadoClass = (repair.confirma || '').toLowerCase() === 'si' ? 'si' : 'no';
         const pendiente = !repair.confirma || repair.confirma === '';
+
+        const waAceptar = `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero aceptar la reparacion. Presupuesto: $' + repair.precio)}`;
+        const waRechazar = `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero cancelar la reparacion.')}`;
 
         resultDiv.innerHTML = `
             <div class="repair-header">
@@ -472,10 +492,10 @@ class ReparacionesApp {
             <div class="client-actions">
                 <p class="client-actions-label">El presupuesto es de <strong>$${repair.precio}</strong>. ¿Aceptás?</p>
                 <div class="client-actions-buttons">
-                    <a class="btn btn-success btn-lg" href="https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero aceptar la reparacion. Presupuesto: $' + repair.precio)}" target="_blank">
+                    <a class="btn btn-success btn-lg" href="#" onclick="app.confirmarPresupuesto('${repair.orden}', 'Si', '${waAceptar}'); return false;">
                         Aceptar presupuesto
                     </a>
-                    <a class="btn btn-danger btn-lg" href="https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent('Hola! Te escribo por la orden N°' + repair.orden + ' y quiero cancelar la reparacion.')}" target="_blank">
+                    <a class="btn btn-danger btn-lg" href="#" onclick="app.confirmarPresupuesto('${repair.orden}', 'No', '${waRechazar}'); return false;">
                         Rechazar
                     </a>
                 </div>
