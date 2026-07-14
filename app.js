@@ -567,46 +567,13 @@ class ReparacionesApp {
         return String(max + 1);
     }
 
-    // Helper: submit params to Apps Script via hidden form (bypasses CORS)
+    // Helper: submit params to Apps Script via fetch POST
     submitToScript(params) {
-        return new Promise((resolve) => {
-            const iframeName = 'scriptFrame_' + Date.now();
-            const iframe = document.createElement('iframe');
-            iframe.name = iframeName;
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = CONFIG.SCRIPT_URL;
-            form.target = iframeName;
-
-            Object.entries(params).forEach(([key, val]) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = val || '';
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-
-            iframe.onload = () => {
-                setTimeout(() => {
-                    form.remove();
-                    iframe.remove();
-                    resolve();
-                }, 500);
-            };
-
-            form.submit();
-
-            setTimeout(() => {
-                form.remove();
-                iframe.remove();
-                resolve();
-            }, 5000);
-        });
+        const body = new URLSearchParams(params);
+        return fetch(CONFIG.SCRIPT_URL, {
+            method: 'POST',
+            body: body
+        }).then(r => r.json()).catch(() => ({}));
     }
 
     async saveRepair() {
