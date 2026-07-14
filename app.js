@@ -652,8 +652,7 @@ class ReparacionesApp {
     }
 
     printReceiptFromData(repair) {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+        const receiptHtml = `
             <!DOCTYPE html>
             <html>
             <head>
@@ -752,8 +751,24 @@ class ReparacionesApp {
                 <script>window.onload = function() { window.print(); }</script>
             </body>
             </html>
-        `);
-        printWindow.document.close();
+        `;
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(receiptHtml);
+        doc.close();
+
+        iframe.contentWindow.onafterprint = () => iframe.remove();
+        setTimeout(() => { if (iframe.parentNode) iframe.remove(); }, 30000);
     }
 
     // ============ EXPORT ============
