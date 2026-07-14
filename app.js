@@ -577,7 +577,7 @@ class ReparacionesApp {
             document.body.appendChild(iframe);
 
             const form = document.createElement('form');
-            form.method = 'GET';
+            form.method = 'POST';
             form.action = CONFIG.SCRIPT_URL;
             form.target = iframeName;
 

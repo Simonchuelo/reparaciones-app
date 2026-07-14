@@ -105,6 +105,15 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  if (e.postData && e.postData.contents) {
+    const pairs = e.postData.contents.split('&');
+    pairs.forEach(pair => {
+      const [key, value] = pair.split('=');
+      if (key) {
+        e.parameter[decodeURIComponent(key)] = decodeURIComponent(value || '');
+      }
+    });
+  }
   return doGet(e);
 }
 
