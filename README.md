@@ -105,18 +105,6 @@ O usá el sitio online: https://simonchuelo.github.io/reparaciones-app/
 | M | Entrega local |
 | N | Fecha retiro |
 
-## 🔗 Links útiles
-
-- **Portal cliente**: https://simonchuelo.github.io/reparaciones-app/
-- **Panel admin**: https://simonchuelo.github.io/reparaciones-app/admin.html
-- **Repositorio**: https://github.com/Simonchuelo/reparaciones-app
-
-## 💡 Tips
-
-- **Para clientes**: Mandá por WhatsApp: `Mirá tu reparación: https://simonchuelo.github.io/reparaciones-app/index.html?orden=XXXXX`
-- **Imprimir comprobante**: Desde el admin, hacé clic en 🖨️ en cualquier reparación
-- **Actualizar datos**: Los datos se recargan automáticamente al abrir la página
-
 ---
 
 **POLYBIUS VIDEOGAMES** 🎮
